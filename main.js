@@ -19,6 +19,11 @@ fs.readFile(inputFile, 'utf8', (err, data) => {
         process.exit(1);
     }
 
+    if (!checkForNesting(data)) {
+        console.error('Error: Nesting');
+        process.exit(1);
+    }
+
     const html = convertMarkdownToHtml(data);
 
     if (outputFile) {
@@ -111,4 +116,37 @@ function checkForUnmatchedMarkers(markdown) {
     }
 
     return true;
+}
+
+function checkForNesting(markdown) {
+    const markers = ['**', '`', '_'];
+    let preformat = false;
+    let stack = [];
+
+    for (let i = 0; i < markdown.length; i++) {
+        if (markdown.startsWith('```', i)) {
+            preformat = !preformat;
+            i += 2;
+            continue;
+        }
+
+        if (preformat) continue;
+
+        for (const marker of markers) {
+            if (markdown.startsWith(marker, i)) {
+                if (stack.length > 0 && stack[stack.length - 1] !== marker) {
+                    return false;
+                }
+                if (stack.length > 0 && stack[stack.length - 1] === marker) {
+                    stack.pop();
+                } else {
+                    stack.push(marker);
+                }
+                i += marker.length - 1;
+                break;
+            }
+        }
+    }
+
+    return preformat || stack.length === 0;
 }
