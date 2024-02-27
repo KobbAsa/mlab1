@@ -60,7 +60,6 @@ function convertMarkdownToHtml(markdown) {
                 newParagraph = false;
 
                 line = line.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                    .replace(/__(.*?)__/g, '<b>$1</b>')
                     .replace(/_(.*?)_/g, '<i>$1</i>')
                     .replace(/`(.*?)`/g, '<code>$1</code>');
 
