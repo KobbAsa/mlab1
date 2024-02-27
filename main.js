@@ -101,9 +101,20 @@ function checkForUnmatchedMarkers(markdown) {
                 let isPartOfWord = (i > 0 && markdown[i - 1].match(/\w/)) && (i < markdown.length - 1 && markdown[i + 1].match(/\w/));
                 if (!isPartOfWord) {
                     isItalicOpen = !isItalicOpen;
+                } else {
+
+                    let nextNonWordUnderscore = markdown.substring(i + 1).search(/(?<!\w)_/);
+                    if (nextNonWordUnderscore !== -1) {
+                        let potentialOpenMarker = markdown[i + 1 + nextNonWordUnderscore];
+                        if (potentialOpenMarker === '_') {
+                            isItalicOpen = !isItalicOpen;
+                            i = i + 1 + nextNonWordUnderscore;
+                        }
+                    }
                 }
             }
         }
+
 
         if (markdown[i] === '`' && i + 2 < markdown.length && markdown[i + 1] === '`' && markdown[i + 2] === '`') {
             preformattedCount++;
