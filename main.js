@@ -134,12 +134,20 @@ function checkForNesting(markdown) {
 
         for (const marker of markers) {
             if (markdown.startsWith(marker, i)) {
-                if (stack.length > 0 && stack[stack.length - 1] !== marker) {
-                    return false;
+                if (marker === '_' && i > 0 && i < markdown.length - 1) {
+                    const prevChar = markdown[i - 1];
+                    const nextChar = markdown[i + 1];
+                    if (/\w/.test(prevChar) && /\w/.test(nextChar)) {
+                        continue;
+                    }
                 }
+
                 if (stack.length > 0 && stack[stack.length - 1] === marker) {
                     stack.pop();
                 } else {
+                    if (stack.length > 0 && stack[stack.length - 1] !== marker) {
+                        return false;
+                    }
                     stack.push(marker);
                 }
                 i += marker.length - 1;
