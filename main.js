@@ -81,51 +81,32 @@ function checkForUnmatchedMarkers(markdown) {
     let preformattedCount = 0;
 
     for (let i = 0; i < markdown.length; i++) {
-
         if (markdown[i] === '*' && i + 1 < markdown.length && markdown[i + 1] === '*') {
             if (!(i > 0 && markdown[i - 1] === '\\')) {
                 isBoldOpen = !isBoldOpen;
                 i++;
             }
-        }
-
-        if (markdown[i] === '`' && (i < 1 || markdown[i - 1] !== '`')) {
+        } else if (markdown[i] === '`' && (i < 1 || markdown[i - 1] !== '`')) {
             if (!(i > 0 && markdown[i - 1] === '\\')) {
                 isMonospaceOpen = !isMonospaceOpen;
             }
-        }
-
-        if (markdown[i] === '_') {
+        } else if (markdown[i] === '_') {
             if (!(i > 0 && markdown[i - 1] === '\\')) {
-                let isPartOfWord = (i > 0 && markdown[i - 1].match(/\w/)) && (i < markdown.length - 1 && markdown[i + 1].match(/\w/));
-                if (!isPartOfWord) {
-                    isItalicOpen = !isItalicOpen;
-                } else {
+                const hasSpaceAround = (i > 0 && markdown[i - 1] === ' ') || (i < markdown.length - 1 && markdown[i + 1] === ' ');
+                const hasQuoteAround = (i > 0 && markdown[i - 1] === '‘') || (i < markdown.length - 1 && markdown[i + 1] === '’');
+                const isPartOfWord = (i > 0 && markdown[i - 1].match(/\w/)) && (i < markdown.length - 1 && markdown[i + 1].match(/\w/));
 
-                    let nextNonWordUnderscore = markdown.substring(i + 1).search(/(?<!\w)_/);
-                    if (nextNonWordUnderscore !== -1) {
-                        let potentialOpenMarker = markdown[i + 1 + nextNonWordUnderscore];
-                        if (potentialOpenMarker === '_') {
-                            isItalicOpen = !isItalicOpen;
-                            i = i + 1 + nextNonWordUnderscore;
-                        }
-                    }
+                if (!hasSpaceAround && !hasQuoteAround && !isPartOfWord) {
+                    isItalicOpen = !isItalicOpen;
                 }
             }
-        }
-
-
-        if (markdown[i] === '`' && i + 2 < markdown.length && markdown[i + 1] === '`' && markdown[i + 2] === '`') {
+        } else if (markdown[i] === '`' && i + 2 < markdown.length && markdown[i + 1] === '`' && markdown[i + 2] === '`') {
             preformattedCount++;
             i += 2;
         }
     }
 
-    if (isBoldOpen || isMonospaceOpen || isItalicOpen || preformattedCount % 2 !== 0) {
-        return false;
-    }
-
-    return true;
+    return !(isBoldOpen || isMonospaceOpen || isItalicOpen || preformattedCount % 2 !== 0);
 }
 
 function checkForNesting(markdown) {
@@ -144,20 +125,21 @@ function checkForNesting(markdown) {
 
         for (const marker of markers) {
             if (markdown.startsWith(marker, i)) {
-                if (marker === '_' && i > 0 && i < markdown.length - 1) {
-                    const prevChar = markdown[i - 1];
-                    const nextChar = markdown[i + 1];
-                    if (/\w/.test(prevChar) && /\w/.test(nextChar)) {
+                if (marker === '_') {
+                    if ((i > 0 && markdown[i - 1].match(/\w/)) && (i < markdown.length - 1 && markdown[i + 1].match(/\w/))) {
+                        continue;
+                    }
+                    if ((i > 0 && markdown[i - 1].match(/[^\w\s]/)) && (i < markdown.length - 1 && markdown[i + 1].match(/[^\w\s]/))) {
                         continue;
                     }
                 }
 
+                if (stack.length > 0 && stack[stack.length - 1] !== marker) {
+                    return false;
+                }
                 if (stack.length > 0 && stack[stack.length - 1] === marker) {
                     stack.pop();
                 } else {
-                    if (stack.length > 0 && stack[stack.length - 1] !== marker) {
-                        return false;
-                    }
                     stack.push(marker);
                 }
                 i += marker.length - 1;
@@ -166,5 +148,5 @@ function checkForNesting(markdown) {
         }
     }
 
-    return preformat || stack.length === 0;
+    return true;
 }
